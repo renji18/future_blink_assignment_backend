@@ -30,7 +30,7 @@ export const newSequence: RequestHandler = async (req, res) => {
       },
     });
 
-    res.status(201).json(newSequence);
+    res.status(200).json(newSequence);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

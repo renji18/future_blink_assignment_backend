@@ -3,12 +3,13 @@ import config from '../config/config';
 import { RequestHandler } from 'express';
 
 const auth: RequestHandler = (req, res, next) => {
-  const token = req.headers['cookie']?.split('=')[1];
+  const token = req.cookies[config.TOKEN_KEY];
 
   if (!token) {
     res.status(403).send('A token is required for authentication');
     return;
   }
+
   try {
     const decoded = jwt.verify(token, config.TOKEN_KEY);
     req.signedCookies = decoded;

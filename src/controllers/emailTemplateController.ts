@@ -24,7 +24,7 @@ export const newEmailTemplate: RequestHandler = async (req, res) => {
       },
     });
 
-    res.status(201).json(newEmailTemplate);
+    res.status(200).json(newEmailTemplate);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

@@ -43,7 +43,7 @@ export const newLeadSource: RequestHandler = async (req, res) => {
         data: records,
       },
     });
-    res.status(201).json(newLeadSource);
+    res.status(200).json(newLeadSource);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

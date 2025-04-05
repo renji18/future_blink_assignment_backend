@@ -8,7 +8,7 @@ interface Config {
 }
 
 const config: Config = {
-  port: Number(process.env.PORT) || 3000,
+  port: Number(process.env.PORT) || 8000,
   TOKEN_KEY: process.env.FUTURE_BLINK_TOKEN_KEY || '',
 };
 
