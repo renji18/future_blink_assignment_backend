@@ -14,15 +14,13 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(auto()) @map("_id") @db.ObjectId
-  name          String
-  email         String          @unique
-  auth          Auth?
-  emailTemplate EmailTemplate[]
-  leadSource    LeadSource[]
-  sequence      Sequence[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  auth      Auth?
+  flows     Flow[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Auth {
@@ -36,38 +34,24 @@ model Auth {
   updatedAt  DateTime @updatedAt
 }
 
-model LeadSource {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  data      Json
-  userId    String     @db.ObjectId
-  user      User       @relation(fields: [userId], references: [id])
-  sequence  Sequence[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-}
-
-model EmailTemplate {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+model Flow {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  subject   String
-  body      String
-  userId    String     @db.ObjectId
-  user      User       @relation(fields: [userId], references: [id])
-  sequence  Sequence[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  data      Json
+  leads     Lead[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Sequence {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  leadSourceId    String        @db.ObjectId
-  leadSource      LeadSource    @relation(fields: [leadSourceId], references: [id])
-  emailTemplateId String        @db.ObjectId
-  emailTemplate   EmailTemplate @relation(fields: [emailTemplateId], references: [id])
-  userId          String        @db.ObjectId
-  user            User          @relation(fields: [userId], references: [id])
-  delayInterval   Int?
-  delayUnit       String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+model Lead {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  flowId    String   @db.ObjectId
+  flow      Flow     @relation(fields: [flowId], references: [id])
+  email     String
+  data      Json
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -60,9 +60,6 @@ export const loginUser: RequestHandler = tryCatchHandler(async (req, res) => {
     where: { email },
     include: {
       auth: true,
-      leadSource: true,
-      emailTemplate: true,
-      sequence: true,
     },
   });
 
@@ -114,7 +111,6 @@ export const getUserData: RequestHandler = tryCatchHandler(async (req, res) => {
 
   const user = await prisma.user.findUnique({
     where: { id: payload.id },
-    include: { emailTemplate: true, leadSource: true, sequence: true },
   });
 
   if (!user) {

@@ -1,18 +1,12 @@
 import { Router } from 'express';
 import auth from '../middlewares/auth';
-import upload from '../middlewares/upload';
 import {
   getUserData,
   loginUser,
   logoutUser,
   registerUser,
 } from '../controllers/userController';
-import { getMyLeads, newLeadSource } from '../controllers/leadSourceController';
-import {
-  getMyEmailTemplates,
-  newEmailTemplate,
-} from '../controllers/emailTemplateController';
-import { getMySequences, newSequence } from '../controllers/sequenceController';
+import { createFlow } from '../controllers/flowController';
 
 const router = Router();
 
@@ -22,18 +16,7 @@ router.route('/login').post(loginUser);
 router.route('/profile').get(auth, getUserData);
 router.route('/logout').get(auth, logoutUser);
 
-// LeadSource Routes
-router
-  .route('/lead-source/new')
-  .post(auth, upload.single('file'), newLeadSource);
-router.route('/lead-source/my-leads').get(auth, getMyLeads);
-
-// Email Template Routes
-router.route('/email-template/new').post(auth, newEmailTemplate);
-router.route('/email-template/my-templates').get(auth, getMyEmailTemplates);
-
-// Sequence Routes
-router.route('/sequence/new').post(auth, newSequence);
-router.route('/sequence/my-sequences').get(auth, getMySequences);
+// Flow Routes
+router.route('/flow').post(auth, createFlow);
 
 export default router;
