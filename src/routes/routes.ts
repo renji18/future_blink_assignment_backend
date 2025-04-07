@@ -6,7 +6,7 @@ import {
   logoutUser,
   registerUser,
 } from '../controllers/userController';
-import { createFlow } from '../controllers/flowController';
+import { createFlow, getFlows } from '../controllers/flowController';
 
 const router = Router();
 
@@ -17,6 +17,6 @@ router.route('/profile').get(auth, getUserData);
 router.route('/logout').get(auth, logoutUser);
 
 // Flow Routes
-router.route('/flow').post(auth, createFlow);
+router.route('/flow').post(auth, createFlow).get(auth, getFlows);
 
 export default router;

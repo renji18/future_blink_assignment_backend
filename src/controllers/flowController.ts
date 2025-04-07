@@ -18,29 +18,14 @@ export const createFlow: RequestHandler = tryCatchHandler(async (req, res) => {
     return;
   }
 
-  const flow = await prisma.flow.create({
-    data: {
-      name,
-      userId: payload.id,
-      data,
-    },
-  });
-
   if (!leads || !Array.isArray(leads) || leads.length === 0) {
     res.status(400).json({ msg: 'No leads provided', data: null });
     return;
   }
 
-  const firstLead = leads[0];
-  let emailKey: string | undefined;
-
-  for (const key of Object.keys(firstLead)) {
-    const value = firstLead[key];
-    if (typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      emailKey = key;
-      break;
-    }
-  }
+  const emailKey = Object.keys(leads[0]).find((key) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leads[0][key]),
+  );
 
   if (!emailKey) {
     res
@@ -49,42 +34,47 @@ export const createFlow: RequestHandler = tryCatchHandler(async (req, res) => {
     return;
   }
 
+  const coldEmailNode = data.find((n: any) => n.type === 'coldEmail');
+  const waitNode = data.find((n: any) => n.type === 'waitDelay');
+
+  let totalDelayMs = 0;
+  if (waitNode?.data?.delay && waitNode?.data?.timeUnit) {
+    const delay = parseInt(waitNode.data.delay) || 1;
+    totalDelayMs += convertToMilliseconds(delay, waitNode.data.timeUnit);
+  }
+
+  const scheduledAt = new Date(Date.now() + totalDelayMs);
+
+  const flow = await prisma.flow.create({
+    data: {
+      name,
+      userId: payload.id,
+      data,
+      scheduledAt,
+    },
+  });
+
   await prisma.lead.createMany({
     data: leads.map((lead: any) => ({
       data: lead,
       flowId: flow.id,
-      email: lead[emailKey!],
+      email: lead[emailKey],
     })),
   });
 
   for (const lead of leads) {
     const leadEmail = lead[emailKey];
-    let totalDelayMs = 0;
 
-    // const leadSourceNode = data.find((node: any) => node.type === 'leadSource');
-    const coldEmailNode = data.find((node: any) => node.type === 'coldEmail');
-    const waitNode = data.find((node: any) => node.type === 'waitDelay');
+    if (coldEmailNode?.data?.subject && coldEmailNode?.data?.body) {
+      const personalizedBody = replacePlaceholders(
+        coldEmailNode?.data?.body,
+        lead,
+      );
 
-    if (coldEmailNode) {
-      const { subject, body } = coldEmailNode.data;
-
-      if (waitNode && waitNode.data?.delay && waitNode.data?.timeUnit) {
-        const { delay, timeUnit } = waitNode.data;
-        totalDelayMs += convertToMilliseconds(delay, timeUnit);
-      }
-
-      console.log(body, 'body before update');
-
-      console.log(lead, 'lead  .');
-
-      const personalizedBody = replacePlaceholders(body, lead);
-
-      console.log(personalizedBody, 'perbody');
-
-      const sendTime = new Date(Date.now() + totalDelayMs);
+      const subject = coldEmailNode?.data?.subject;
 
       try {
-        await agenda.schedule(sendTime, 'send-email', {
+        await agenda.schedule(scheduledAt, 'send-email', {
           to: leadEmail,
           subject,
           body: personalizedBody,
@@ -100,3 +90,23 @@ export const createFlow: RequestHandler = tryCatchHandler(async (req, res) => {
     .status(200)
     .json({ msg: 'Flow created and leads saved successfully.', data: flow });
 }, 'Error Creating Flow');
+
+export const getFlows: RequestHandler = tryCatchHandler(async (req, res) => {
+  const payload = req.signedCookies;
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.id },
+  });
+
+  if (!user) {
+    res.status(401).json({ msg: 'User not found', data: null });
+    return;
+  }
+
+  const flows = await prisma.flow.findMany({
+    where: { userId: payload.id },
+    include: { _count: true, leads: true },
+  });
+
+  res.status(200).json({ msg: 'Flows Fetched Successfully', data: flows });
+}, 'Error Fetching Flows');
