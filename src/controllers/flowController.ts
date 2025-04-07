@@ -5,6 +5,7 @@ import agenda from '../utils/agendaInstance';
 import { replacePlaceholders } from '../utils/templateEngine';
 import { convertToMilliseconds } from '../utils/convertToMilliseconds';
 
+// Controller to create a new flow and schedule emails
 export const createFlow: RequestHandler = tryCatchHandler(async (req, res) => {
   const payload = req.signedCookies;
   const { name, data, leads } = req.body;
@@ -45,6 +46,7 @@ export const createFlow: RequestHandler = tryCatchHandler(async (req, res) => {
 
   const scheduledAt = new Date(Date.now() + totalDelayMs);
 
+  // Create flow in database
   const flow = await prisma.flow.create({
     data: {
       name,
@@ -54,6 +56,7 @@ export const createFlow: RequestHandler = tryCatchHandler(async (req, res) => {
     },
   });
 
+  // Save each lead to the database
   await prisma.lead.createMany({
     data: leads.map((lead: any) => ({
       data: lead,
@@ -62,6 +65,7 @@ export const createFlow: RequestHandler = tryCatchHandler(async (req, res) => {
     })),
   });
 
+  // Schedule an email job for each lead
   for (const lead of leads) {
     const leadEmail = lead[emailKey];
 
@@ -91,6 +95,7 @@ export const createFlow: RequestHandler = tryCatchHandler(async (req, res) => {
     .json({ msg: 'Flow created and leads saved successfully.', data: flow });
 }, 'Error Creating Flow');
 
+// Controller to fetch all flows for a logged-in user
 export const getFlows: RequestHandler = tryCatchHandler(async (req, res) => {
   const payload = req.signedCookies;
 
